@@ -1,9 +1,9 @@
 #![feature(absolute_path)]
 fn clean_targetfile(path: std::path::PathBuf) -> std::io::Result<()> {
-    match std::fs::symlink_metadata(path.clone()) {
+    match std::fs::symlink_metadata(&path) {
         Ok(_) => {
-            println!("remove old file: {:?}", path.clone());
-            std::fs::remove_file(path.clone())?;
+            println!("remove old file: {:?}", &path);
+            std::fs::remove_file(&path)?;
         }
         Err(err) => match err.kind() {
             std::io::ErrorKind::NotFound => {
@@ -35,7 +35,7 @@ mod tests {
         let args: Vec<String> = std::env::args().collect();
         let thisfile_path = std::path::absolute(&args[0]).unwrap();
         let good_symlink_path = std::env::temp_dir().join("good_symlink.txt");
-        let _ = std::os::unix::fs::symlink(thisfile_path, good_symlink_path.clone());
+        let _ = std::os::unix::fs::symlink(thisfile_path, &good_symlink_path);
         assert!(
             clean_targetfile(good_symlink_path).is_ok(),
             "Test case2 failed"
@@ -48,7 +48,7 @@ mod tests {
         let bad_symlink_path = std::env::temp_dir().join("bad_symlink.txt");
         let _ = std::os::unix::fs::symlink(
             std::env::temp_dir().join("filenotexist"),
-            bad_symlink_path.clone(),
+            &bad_symlink_path,
         );
         assert!(
             clean_targetfile(bad_symlink_path).is_ok(),
