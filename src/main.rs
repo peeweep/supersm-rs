@@ -25,49 +25,46 @@ mod tests {
     // test case 1: file not found
     #[test]
     fn test_case1() {
-        let path = std::path::absolute("file_not_found.txt").unwrap();
-        let result = clean_targetfile(path);
-        assert!(result.is_ok(), "Test case1 failed");
-        println!("Test case1 passed");
+        let path = std::env::temp_dir().join("file_not_found.txt");
+        assert!(clean_targetfile(path).is_ok(), "Test case1 failed");
     }
 
-    // test case 2: file is symlink
+    // test case 2: file is a symlink
     #[test]
     fn test_case2() {
         let args: Vec<String> = std::env::args().collect();
         let thisfile_path = std::path::absolute(&args[0]).unwrap();
-        // let good_symlink_path = thisfile_path.parent().unwrap().join("good_symlink.txt");
-        let good_symlink_path = std::path::absolute("/tmp/good_symlink.txt").unwrap();
+        let good_symlink_path = std::env::temp_dir().join("good_symlink.txt");
         let _ = std::os::unix::fs::symlink(thisfile_path, good_symlink_path.clone());
-        match clean_targetfile(good_symlink_path) {
-            Ok(_) => {
-                println!("Test case2 passed");
-            }
-            Err(err) => {
-                panic!("{:?}", err);
-            }
-        }
+        assert!(
+            clean_targetfile(good_symlink_path).is_ok(),
+            "Test case2 failed"
+        );
     }
 
     // test case 3: file is a bad symlink
     #[test]
-    fn test_case3() {}
+    fn test_case3() {
+        let bad_symlink_path = std::env::temp_dir().join("bad_symlink.txt");
+        let _ = std::os::unix::fs::symlink(
+            std::env::temp_dir().join("filenotexist"),
+            bad_symlink_path.clone(),
+        );
+        assert!(
+            clean_targetfile(bad_symlink_path).is_ok(),
+            "Test case3 failed"
+        );
+    }
 
-    // test case 4: file found but not a symlink file
+    // test case 4: file is a real file
     #[test]
-    fn test_case4() {}
+    fn test_case4() {
+        let real_file = std::env::temp_dir().join("real_file.txt");
+        std::fs::write(&real_file, "Hello, World!").expect("Failed to create real file");
+        assert!(clean_targetfile(real_file).is_ok(), "Test case4 failed");
+    }
 }
 
 fn main() -> std::io::Result<()> {
-    // 1. remove old file
-    // let path = std::fs::canonicalize("test/b.txt")?;
-    let path = std::path::absolute("test/b.txt")?;
-
-    let _ = clean_targetfile(path.clone());
-
-    // 2. do a symlink
-    println!("do a symlink");
-    std::os::unix::fs::symlink("a.txt", path.clone())?;
-
     Ok(())
 }
