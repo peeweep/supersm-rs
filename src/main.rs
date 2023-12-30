@@ -62,7 +62,16 @@ mod tests {
         assert!(clean_targetfile(real_file).is_ok(), "Test case4 failed");
     }
 }
-
+mod options;
 fn main() -> std::io::Result<()> {
+    let app_options = options::AppOptions::new();
+
+    println!("target: {}", app_options.target);
+    if app_options.delete != "" {
+        println!("delete: {}", app_options.delete);
+        return Ok(());
+    }
+    println!("add: {}", app_options.add);
+
     Ok(())
 }

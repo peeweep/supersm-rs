@@ -1,3 +1,3 @@
 # supersm-rs
 
-This project is a dotfile manager, as a rust impl for [supersm](https://github.com/peeweep/supersm).
+This project is a dotfiles manager, as a rust impl for [supersm](https://github.com/peeweep/supersm).
