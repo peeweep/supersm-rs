@@ -22,6 +22,7 @@ impl AppOptions {
                     .short("D")
                     .long("delete")
                     .value_name("project folder")
+                    .conflicts_with("add")
                     .help("Remove links"),
             )
             .arg(
@@ -32,14 +33,16 @@ impl AppOptions {
                     .help("Set target"),
             )
             .get_matches();
+
         let add = matches.value_of("add").unwrap_or("").to_string();
         let delete = matches.value_of("delete").unwrap_or("").to_string();
 
         let currentdir = std::env::current_dir().unwrap();
-        let currentdir_str = currentdir.to_str().unwrap();
+        let parentdir = currentdir.parent().unwrap();
+        let parentdir_str = parentdir.to_str().unwrap();
         let target = matches
             .value_of("target")
-            .unwrap_or(&currentdir_str)
+            .unwrap_or(&parentdir_str)
             .to_string();
 
         AppOptions {

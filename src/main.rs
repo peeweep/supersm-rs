@@ -2,7 +2,7 @@
 fn clean_targetfile(path: std::path::PathBuf) -> std::io::Result<()> {
     match std::fs::symlink_metadata(&path) {
         Ok(_) => {
-            println!("remove old file: {:?}", &path);
+            println!("rm -v {}", path.clone().to_str().unwrap());
             std::fs::remove_file(&path)?;
         }
         Err(err) => match err.kind() {
@@ -63,15 +63,58 @@ mod tests {
     }
 }
 mod options;
+
+fn list_files(directory: &str) -> Vec<String> {
+    let mut files = Vec::new();
+
+    if let Ok(entries) = std::fs::read_dir(directory) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                let path = entry.path();
+                if path.is_file() {
+                    if let Some(file_name) = path.file_name() {
+                        if let Some(file_str) = file_name.to_str() {
+                            // println!("{}/{}", directory, file_str.to_string());
+                            files.push(file_str.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    files
+}
+
 fn main() -> std::io::Result<()> {
     let app_options = options::AppOptions::new();
 
-    println!("target: {}", app_options.target);
+    // delete target
     if app_options.delete != "" {
-        println!("delete: {}", app_options.delete);
+        let files = list_files(&app_options.delete.clone());
+        for filename in files {
+            let target_file =
+                std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
+            clean_targetfile(target_file.clone())?;
+        }
         return Ok(());
     }
-    println!("add: {}", app_options.add);
+
+    // add target
+    let files = list_files(&app_options.add.clone());
+    for filename in files {
+        let origin_file = std::path::absolute(app_options.add.clone() + "/" + &filename).unwrap();
+        let target_file =
+            std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
+        let _ = clean_targetfile(target_file.clone());
+
+        std::os::unix::fs::symlink(origin_file.clone(), target_file.clone())?;
+        println!(
+            "ln -sfv {} {}",
+            origin_file.clone().to_str().unwrap(),
+            target_file.clone().to_str().unwrap()
+        );
+    }
 
     Ok(())
 }
