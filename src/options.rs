@@ -12,7 +12,7 @@ impl AppOptions {
             .about("A dotfiles manager https://github.com/peeweep/supersm-rs")
             .arg(
                 clap::Arg::with_name("add")
-                    .short("A")
+                    .short('A')
                     .long("add")
                     .value_name("project folder")
                     .multiple(true)
@@ -20,7 +20,7 @@ impl AppOptions {
             )
             .arg(
                 clap::Arg::with_name("delete")
-                    .short("D")
+                    .short('D')
                     .long("delete")
                     .value_name("project folder")
                     .multiple(true)
@@ -29,7 +29,7 @@ impl AppOptions {
             )
             .arg(
                 clap::Arg::with_name("target")
-                    .short("T")
+                    .short('T')
                     .long("target")
                     .value_name("target folder")
                     .help("Set target"),
