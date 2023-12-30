@@ -6,9 +6,7 @@ fn clean_targetfile(path: std::path::PathBuf) -> std::io::Result<()> {
             std::fs::remove_file(&path)?;
         }
         Err(err) => match err.kind() {
-            std::io::ErrorKind::NotFound => {
-                return Ok(());
-            }
+            std::io::ErrorKind::NotFound => {}
             _ => {
                 return Err(err);
             }
