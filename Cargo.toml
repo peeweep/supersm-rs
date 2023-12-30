@@ -8,5 +8,8 @@ edition = "2021"
 [dependencies]
 clap = "3.2.25"
 
+[profile.release]
+strip = true
+
 [features]
 absolute_path = []
