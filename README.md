@@ -16,4 +16,4 @@ OPTIONS:
 ```
 
 TODO:
- - `--add` as default option: `supersm-rs --add target` eq `supersm-rs target`
+ - `--add` as default option: `supersm-rs --add project` eq `supersm-rs project`
