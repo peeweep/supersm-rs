@@ -1,4 +1,5 @@
 #![feature(absolute_path)]
+mod options;
 fn clean_targetfile(path: std::path::PathBuf) -> std::io::Result<()> {
     match std::fs::symlink_metadata(&path) {
         Ok(_) => {
@@ -62,26 +63,37 @@ mod tests {
         assert!(clean_targetfile(real_file).is_ok(), "Test case4 failed");
     }
 }
-mod options;
 
 fn list_files(directory: &str) -> Vec<String> {
-    std::fs::read_dir(directory)
-        .map(|entries| {
-            entries
-                .filter_map(|entry| {
-                    entry.ok().and_then(|e| {
-                        e.file_type().ok().and_then(|ft| {
-                            if ft.is_file() {
-                                e.file_name().to_str().map(String::from)
-                            } else {
-                                None
-                            }
-                        })
-                    })
-                })
-                .collect()
-        })
-        .unwrap_or_else(|_| Vec::new())
+    let mut files = Vec::new();
+    let directory_path = std::path::Path::new(directory);
+
+    fn list_files_recursive(
+        directory: &std::path::Path,
+        top_directory: &std::path::Path,
+        files: &mut Vec<String>,
+    ) {
+        if let Ok(entries) = std::fs::read_dir(directory) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_file() {
+                    files.push(path.to_string_lossy().into_owned());
+                } else if path.is_dir() {
+                    list_files_recursive(&path, top_directory, files);
+                }
+            }
+        }
+    }
+
+    list_files_recursive(directory_path, directory_path, &mut files);
+
+    files.iter_mut().for_each(|file| {
+        if file.starts_with(directory) {
+            *file = file.replacen(directory, "", 1);
+        }
+    });
+
+    files
 }
 
 fn main() -> std::io::Result<()> {
@@ -108,6 +120,13 @@ fn main() -> std::io::Result<()> {
                 let origin_file = std::path::absolute(format!("{}/{}", add_value, filename))?;
                 let target_file =
                     std::path::absolute(format!("{}/{}", app_options.target, filename))?;
+
+                if let Some(parent) = target_file.parent() {
+                    if !parent.exists() {
+                        std::fs::create_dir_all(parent)?;
+                    }
+                }
+
                 let _ = clean_targetfile(target_file.clone());
 
                 std::os::unix::fs::symlink(origin_file.clone(), target_file.clone())?;
