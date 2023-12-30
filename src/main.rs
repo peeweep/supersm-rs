@@ -65,25 +65,23 @@ mod tests {
 mod options;
 
 fn list_files(directory: &str) -> Vec<String> {
-    let mut files = Vec::new();
-
-    if let Ok(entries) = std::fs::read_dir(directory) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(file_name) = path.file_name() {
-                        if let Some(file_str) = file_name.to_str() {
-                            // println!("{}/{}", directory, file_str.to_string());
-                            files.push(file_str.to_string());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    files
+    std::fs::read_dir(directory)
+        .map(|entries| {
+            entries
+                .filter_map(|entry| {
+                    entry.ok().and_then(|e| {
+                        e.file_type().ok().and_then(|ft| {
+                            if ft.is_file() {
+                                e.file_name().to_str().map(String::from)
+                            } else {
+                                None
+                            }
+                        })
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_else(|_| Vec::new())
 }
 
 fn main() -> std::io::Result<()> {
@@ -95,8 +93,8 @@ fn main() -> std::io::Result<()> {
             let files = list_files(delete_value);
             for filename in files {
                 let target_file =
-                    std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
-                clean_targetfile(target_file.clone())?;
+                    std::path::absolute(format!("{}/{}", app_options.target, filename))?;
+                clean_targetfile(target_file)?;
             }
             return Ok(());
         }
@@ -107,17 +105,16 @@ fn main() -> std::io::Result<()> {
         for add_value in add_values {
             let files = list_files(add_value);
             for filename in files {
-                let origin_file =
-                    std::path::absolute(add_value.to_owned() + "/" + &filename).unwrap();
+                let origin_file = std::path::absolute(format!("{}/{}", add_value, filename))?;
                 let target_file =
-                    std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
+                    std::path::absolute(format!("{}/{}", app_options.target, filename))?;
                 let _ = clean_targetfile(target_file.clone());
 
                 std::os::unix::fs::symlink(origin_file.clone(), target_file.clone())?;
                 println!(
                     "ln -sfv {} {}",
-                    origin_file.clone().to_str().unwrap(),
-                    target_file.clone().to_str().unwrap()
+                    origin_file.to_str().unwrap(),
+                    target_file.to_str().unwrap()
                 );
             }
         }
