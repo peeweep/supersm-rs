@@ -1,6 +1,6 @@
 pub struct AppOptions {
-    pub add: String,
-    pub delete: String,
+    pub add: Option<Vec<String>>,
+    pub delete: Option<Vec<String>>,
     pub target: String,
 }
 
@@ -15,6 +15,7 @@ impl AppOptions {
                     .short("A")
                     .long("add")
                     .value_name("project folder")
+                    .multiple(true)
                     .help("Add links"),
             )
             .arg(
@@ -22,6 +23,7 @@ impl AppOptions {
                     .short("D")
                     .long("delete")
                     .value_name("project folder")
+                    .multiple(true)
                     .conflicts_with("add")
                     .help("Remove links"),
             )
@@ -34,8 +36,12 @@ impl AppOptions {
             )
             .get_matches();
 
-        let add = matches.value_of("add").unwrap_or("").to_string();
-        let delete = matches.value_of("delete").unwrap_or("").to_string();
+        let add = matches
+            .values_of("add")
+            .map(|values| values.map(String::from).collect());
+        let delete = matches
+            .values_of("delete")
+            .map(|values| values.map(String::from).collect());
 
         let currentdir = std::env::current_dir().unwrap();
         let parentdir = currentdir.parent().unwrap();

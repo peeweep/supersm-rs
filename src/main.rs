@@ -90,30 +90,37 @@ fn main() -> std::io::Result<()> {
     let app_options = options::AppOptions::new();
 
     // delete target
-    if app_options.delete != "" {
-        let files = list_files(&app_options.delete.clone());
-        for filename in files {
-            let target_file =
-                std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
-            clean_targetfile(target_file.clone())?;
+    if let Some(delete_values) = &app_options.delete {
+        for delete_value in delete_values {
+            let files = list_files(delete_value);
+            for filename in files {
+                let target_file =
+                    std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
+                clean_targetfile(target_file.clone())?;
+            }
+            return Ok(());
         }
-        return Ok(());
     }
 
     // add target
-    let files = list_files(&app_options.add.clone());
-    for filename in files {
-        let origin_file = std::path::absolute(app_options.add.clone() + "/" + &filename).unwrap();
-        let target_file =
-            std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
-        let _ = clean_targetfile(target_file.clone());
+    if let Some(add_values) = &app_options.add {
+        for add_value in add_values {
+            let files = list_files(add_value);
+            for filename in files {
+                let origin_file =
+                    std::path::absolute(add_value.to_owned() + "/" + &filename).unwrap();
+                let target_file =
+                    std::path::absolute(app_options.target.clone() + "/" + &filename).unwrap();
+                let _ = clean_targetfile(target_file.clone());
 
-        std::os::unix::fs::symlink(origin_file.clone(), target_file.clone())?;
-        println!(
-            "ln -sfv {} {}",
-            origin_file.clone().to_str().unwrap(),
-            target_file.clone().to_str().unwrap()
-        );
+                std::os::unix::fs::symlink(origin_file.clone(), target_file.clone())?;
+                println!(
+                    "ln -sfv {} {}",
+                    origin_file.clone().to_str().unwrap(),
+                    target_file.clone().to_str().unwrap()
+                );
+            }
+        }
     }
 
     Ok(())
