@@ -1,4 +1,3 @@
-#![feature(absolute_path)]
 mod options;
 fn clean_targetfile(path: std::path::PathBuf) -> std::io::Result<()> {
     match std::fs::symlink_metadata(&path) {
@@ -32,7 +31,7 @@ mod tests {
     #[test]
     fn test_case2() {
         let args: Vec<String> = std::env::args().collect();
-        let thisfile_path = std::path::absolute(&args[0]).unwrap();
+        let thisfile_path = std::path::Path::canonicalize(std::path::Path::new(&args[0])).unwrap();
         let good_symlink_path = std::env::temp_dir().join("good_symlink.txt");
         let _ = std::os::unix::fs::symlink(thisfile_path, &good_symlink_path);
         assert!(
@@ -104,9 +103,9 @@ fn main() -> std::io::Result<()> {
         for delete_value in delete_values {
             let files = list_files(delete_value);
             for filename in files {
-                let target_file =
-                    std::path::absolute(format!("{}/{}", app_options.target, filename))?;
-                clean_targetfile(target_file)?;
+                let target_file_path = format!("{}{}", app_options.target, filename);
+                let target_file = std::path::Path::new(&target_file_path);
+                clean_targetfile(target_file.to_path_buf())?;
             }
             return Ok(());
         }
@@ -117,9 +116,11 @@ fn main() -> std::io::Result<()> {
         for add_value in add_values {
             let files = list_files(add_value);
             for filename in files {
-                let origin_file = std::path::absolute(format!("{}/{}", add_value, filename))?;
-                let target_file =
-                    std::path::absolute(format!("{}/{}", app_options.target, filename))?;
+                let origin_file_path = format!("{}/{}", add_value, filename);
+                let origin_file =
+                    std::path::Path::canonicalize(std::path::Path::new(&origin_file_path))?;
+                let target_file_path = format!("{}{}", app_options.target, filename);
+                let target_file = std::path::Path::new(&target_file_path);
 
                 if let Some(parent) = target_file.parent() {
                     if !parent.exists() {
@@ -127,9 +128,9 @@ fn main() -> std::io::Result<()> {
                     }
                 }
 
-                let _ = clean_targetfile(target_file.clone());
+                let _ = clean_targetfile(target_file.to_path_buf());
 
-                std::os::unix::fs::symlink(origin_file.clone(), target_file.clone())?;
+                std::os::unix::fs::symlink(origin_file.clone(), target_file)?;
                 println!(
                     "ln -sfv {} {}",
                     origin_file.to_str().unwrap(),

@@ -10,6 +10,3 @@ clap = "3.2.25"
 
 [profile.release]
 strip = true
-
-[features]
-absolute_path = []
