@@ -8,7 +8,7 @@ struct AppOptions {
     #[clap(short = 'd', long = "delete", conflicts_with = "add")]
     delete: Option<String>,
 
-    #[clap(short = 't', long = "target", default_value = "../")]
+    #[clap(short = 't', long = "target", default_value = "..")]
     target: String,
 }
 
