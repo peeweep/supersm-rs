@@ -1,4 +1,17 @@
-mod options;
+use clap::Parser;
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct AppOptions {
+    #[clap(short = 'a', long = "add", conflicts_with = "delete")]
+    add: Option<String>,
+
+    #[clap(short = 'd', long = "delete", conflicts_with = "add")]
+    delete: Option<String>,
+
+    #[clap(short = 't', long = "target", default_value = "../")]
+    target: String,
+}
+
 fn clean_targetfile(path: std::path::PathBuf) -> std::io::Result<()> {
     match std::fs::symlink_metadata(&path) {
         Ok(_) => {
@@ -63,7 +76,7 @@ mod tests {
     }
 }
 
-fn list_files(directory: &str) -> Vec<String> {
+fn list_files(directory: &String) -> Vec<String> {
     let mut files = Vec::new();
     let directory_path = std::path::Path::new(directory);
 
@@ -96,47 +109,43 @@ fn list_files(directory: &str) -> Vec<String> {
 }
 
 fn main() -> std::io::Result<()> {
-    let app_options = options::AppOptions::new();
+    let app_options = AppOptions::parse();
 
     // delete target
-    if let Some(delete_values) = &app_options.delete {
-        for delete_value in delete_values {
-            let files = list_files(delete_value);
-            for filename in files {
-                let target_file_path = format!("{}{}", app_options.target, filename);
-                let target_file = std::path::Path::new(&target_file_path);
-                clean_targetfile(target_file.to_path_buf())?;
-            }
-            return Ok(());
+    if let Some(delete_value) = &app_options.delete {
+        let files = list_files(delete_value);
+        for filename in files {
+            let target_file_path = format!("{}{}", app_options.target, filename);
+            let target_file = std::path::Path::new(&target_file_path);
+            clean_targetfile(target_file.to_path_buf())?;
         }
+        return Ok(());
     }
 
     // add target
-    if let Some(add_values) = &app_options.add {
-        for add_value in add_values {
-            let files = list_files(add_value);
-            for filename in files {
-                let origin_file_path = format!("{}/{}", add_value, filename);
-                let origin_file =
-                    std::path::Path::canonicalize(std::path::Path::new(&origin_file_path))?;
-                let target_file_path = format!("{}{}", app_options.target, filename);
-                let target_file = std::path::Path::new(&target_file_path);
+    if let Some(add_value) = &app_options.add {
+        let files = list_files(add_value);
+        for filename in files {
+            let origin_file_path = format!("{}/{}", add_value, filename);
+            let origin_file =
+                std::path::Path::canonicalize(std::path::Path::new(&origin_file_path))?;
+            let target_file_path = format!("{}{}", app_options.target, filename);
+            let target_file = std::path::Path::new(&target_file_path);
 
-                if let Some(parent) = target_file.parent() {
-                    if !parent.exists() {
-                        std::fs::create_dir_all(parent)?;
-                    }
+            if let Some(parent) = target_file.parent() {
+                if !parent.exists() {
+                    std::fs::create_dir_all(parent)?;
                 }
-
-                let _ = clean_targetfile(target_file.to_path_buf());
-
-                std::os::unix::fs::symlink(origin_file.clone(), target_file)?;
-                println!(
-                    "ln -sfv {} {}",
-                    origin_file.to_str().unwrap(),
-                    target_file.to_str().unwrap()
-                );
             }
+
+            let _ = clean_targetfile(target_file.to_path_buf());
+
+            std::os::unix::fs::symlink(origin_file.clone(), target_file)?;
+            println!(
+                "ln -sfv {} {}",
+                origin_file.to_str().unwrap(),
+                target_file.to_str().unwrap()
+            );
         }
     }
 
