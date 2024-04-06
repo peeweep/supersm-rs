@@ -4,15 +4,14 @@ This project is a dotfiles manager, as a rust impl for [supersm](https://github.
 
 
 ```
-USAGE:
-    supersm-rs [OPTIONS]
+Usage: supersm-rs [OPTIONS]
 
-OPTIONS:
-    -A, --add <project folder>...       Add links
-    -D, --delete <project folder>...    Remove links
-    -h, --help                          Print help information
-    -T, --target <target folder>        Set target
-    -V, --version                       Print version information
+Options:
+  -a, --add <ADD>
+  -d, --delete <DELETE>
+  -t, --target <TARGET>  [default: ../]
+  -h, --help             Print help
+  -V, --version          Print version
 ```
 
 TODO:
